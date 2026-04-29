@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Digital Instrument!</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		#handshake {
+			position: fixed;
+			top: 0; left: 0; right: 0; bottom: 0;
+			background: black;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-family: sans-serif;
+			cursor: pointer;
+			z-index: 99999;
+		}
+		body {
+			background-color: rgb(17, 0, 255);
+		}
+		.container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 100vh;
+			gap: 25px;
+		}
+		button {
+			width: 100px;
+			height: 100px;
+			font-size: 1rem;
+			cursor: pointer;
+			border: none;
+			border-radius: 0;
+			color: white;
+		}
+		#drum    { background: red; }
+		#guitar  { background: yellow; color: black; }
+		#bass    { background: green; }
+		#piano   { background: blue; }
+		button.on {
+			outline: 3px solid white;
+		}
+		.traffic-light {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+		.pole {
+			width: 18px;
+			height: 80px;
+			background: black;
+		}
+		.housing {
+			background: black;
+			padding: 14px;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			border-radius: 10px;
+		}
+	</style>
+	<script src="https://unpkg.com/tone"></script>
+</head>
+<body>
+
+	<div id="handshake">CLICK ANYWHERE TO START</div>
+
+	<div class="container">
+		<div class="traffic-light">
+			<div class="pole"></div>
+			<div class="housing">
+				<button id="drum">Drum</button>
+				<button id="guitar">Guitar</button>
+				<button id="bass">Bass</button>
+			</div>
+		</div>
+		<button id="piano">Piano</button>
+	</div>
+
+	<script>
+		document.querySelector("#handshake").addEventListener('click', function() {
+			Tone.start();
+			this.style.display = 'none';
+		});
+
+		
+		let drum = new Tone.MembraneSynth().toDestination();
+		let drumLoop = new Tone.Loop(() => drum.triggerAttackRelease("C1", "8n"), "4n");
+
+		let guitar = new Tone.PluckSynth().toDestination();
+		let guitarLoop = new Tone.Loop(() => guitar.triggerAttackRelease("E4", "8n"), "4n");
+
+		let bassFilter = new Tone.Filter(600, "lowpass").toDestination();
+		let bass = new Tone.Synth({
+			oscillator: { type: "sawtooth" },
+			envelope: { attack: 0.02, decay: 0.3, sustain: 0.2, release: 0.8 }
+		}).connect(bassFilter);
+		let bassLoop = new Tone.Loop(() => bass.triggerAttackRelease("E2", "4n"), "4n");
+
+		let piano = new Tone.Synth({
+			oscillator: { type: "triangle" },
+			envelope: { attack: 0.005, decay: 0.3, sustain: 0.1, release: 1.5 }
+		}).toDestination();
+		let pianoLoop = new Tone.Loop(() => piano.triggerAttackRelease("C4", "8n"), "4n");
+
+		let allLoops = [drumLoop, guitarLoop, bassLoop, pianoLoop];
+
+		function toggleLoop(loop, button) {
+			if (loop.state === "started") {
+				loop.stop();
+				button.classList.remove("on");
+				if (allLoops.every(l => l.state !== "started")) Tone.Transport.stop();
+			} else {
+				loop.start(0);
+				button.classList.add("on");
+				Tone.Transport.start();
+			}
+		}
+
+		document.querySelector("#drum").addEventListener('click', function() {
+			toggleLoop(drumLoop, this);
+		});
+		document.querySelector("#guitar").addEventListener('click', function() {
+			toggleLoop(guitarLoop, this);
+		});
+		document.querySelector("#bass").addEventListener('click', function() {
+			toggleLoop(bassLoop, this);
+		});
+		document.querySelector("#piano").addEventListener('click', function() {
+			toggleLoop(pianoLoop, this);
+		});
+	</script>
+</body>
+</html>
